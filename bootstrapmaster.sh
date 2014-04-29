@@ -53,7 +53,7 @@ mv -v "${GITHUB_REPO_NAME}" /etc/puppet
 ln -s "/etc/puppet/${GITHUB_REPO_NAME}" "/etc/puppet/${REPO_ALIAS}"
 
 echo "Creating temporary site.pp"
-echo "node \"$(hostname -f)\" {class{'base': is_puppet_master=>'true', puppet_master_address=>'$(hostname -f)'}}" >> $TEMP_DIR/site.pp
+echo "node \"$(hostname -f)\" {class{'base': is_puppet_master=>true, puppet_master_address=>'$(hostname -f)'}}" >> $TEMP_DIR/site.pp
 
 echo "Standing up temporary master"
 /usr/bin/puppet master \
@@ -63,10 +63,11 @@ echo "Standing up temporary master"
 	--dns_alt_names=$(hostname -f) \
 	--vardir=${TEMP_DIR}/puppet_tmp \
 	--confdir=${TEMP_DIR}/puppet_etc \
-	--modulepath=/etc/puppet/${REPO_ALIAS}/puppet/modules \
+	--modulepath=/home/karl/puppet_repo/puppet/modules \
 	--manifest=${TEMP_DIR}/site.pp \
 	--autosign=true | perl -ple 's#^#puppetmaster: #' &
 
+#	--modulepath=/etc/puppet/${REPO_ALIAS}/puppet/modules \
 
 sleep 4
 [ ! -e "/proc/${MASTER_PID}" ] && { echo "puppet master failed to start"; exit 1; }
