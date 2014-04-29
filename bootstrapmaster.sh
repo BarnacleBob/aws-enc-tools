@@ -63,11 +63,10 @@ echo "Standing up temporary master"
 	--dns_alt_names=$(hostname -f) \
 	--vardir=${TEMP_DIR}/puppet_tmp \
 	--confdir=${TEMP_DIR}/puppet_etc \
-	--modulepath=/home/karl/puppet_repo/puppet/modules \
+	--modulepath=/etc/puppet/${REPO_ALIAS}/puppet/modules \
 	--manifest=${TEMP_DIR}/site.pp \
 	--autosign=true | perl -ple 's#^#puppetmaster: #' &
 
-#	--modulepath=/etc/puppet/${REPO_ALIAS}/puppet/modules \
 
 sleep 4
 [ ! -e "/proc/${MASTER_PID}" ] && { echo "puppet master failed to start"; exit 1; }
