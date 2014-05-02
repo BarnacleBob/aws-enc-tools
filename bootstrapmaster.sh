@@ -53,7 +53,7 @@ mv -v "${GITHUB_REPO_NAME}" /etc/puppet
 ln -s "/etc/puppet/${GITHUB_REPO_NAME}" "/etc/puppet/${REPO_ALIAS}"
 
 echo "Creating temporary site.pp"
-echo "node \"$(hostname -f)\" {class{'base': is_puppet_master=>true, puppet_master_address=>'$(hostname -f)'}}" >> $TEMP_DIR/site.pp
+echo "node \"$(hostname -f)\" {class{'base': is_puppet_master=>true}}" >> $TEMP_DIR/site.pp
 
 echo "Standing up temporary master"
 /usr/bin/puppet master \
