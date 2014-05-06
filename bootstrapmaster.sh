@@ -28,12 +28,18 @@ mkdir puppet_etc
 echo "Made temp dir $TEMP_DIR"
 
 # Check out the repo first in case that fails
-echo "cloning puppet repo"
+echo "cloning puppet repo to test git connection"
 git clone git@github.com:CranestyleLabs/PixelServerOps.git || { echo "failed to checkout repository"; exit 1; }
-cd PixelServerOps
-git submodule init
-git submodule update
-cd ..
+
+echo "checking for puppet labs apt repo"
+if dpkg -l puppetlabs-release > /dev/null; then
+	echo "already installed"
+else
+	echo "installing"
+	wget https://apt.puppetlabs.com/puppetlabs-release-precise.deb
+	dpkg -i puppetlabs-release-precise.deb
+	apt-get update
+fi
 
 echo "checking for puppet install"
 if dpkg -l puppetmaster > /dev/null; then
@@ -52,11 +58,20 @@ for dir in /etc/puppet /var/lib/puppet/ssl; do
 	mkdir -v ${dir}
 done
 
-echo "moving puppet repo to /etc/puppet"
-mv -v "${GITHUB_REPO_NAME}" /etc/puppet
+
+
+# Check out the repo first in case that fails
+cd /etc/puppet
+echo "cloning puppet repo again in the correct location to work around a bug in git submodules"
+git clone git@github.com:CranestyleLabs/PixelServerOps.git || { echo "failed to checkout repository"; exit 1; }
+cd PixelServerOps
+git submodule init
+git submodule update
+cd -
 ln -s "/etc/puppet/${GITHUB_REPO_NAME}" "/etc/puppet/${REPO_ALIAS}"
 
 echo "Creating temporary site.pp"
+echo "stage{'apt': before => Stage['main']}" >> $TEMP_DIR/site.pp
 echo "node \"$(hostname -f)\" {class{'base': is_puppet_master=>true}}" >> $TEMP_DIR/site.pp
 
 echo "Standing up temporary master"
@@ -72,16 +87,17 @@ echo "Standing up temporary master"
 	--autosign=true | perl -ple 's#^#puppetmaster: #' &
 
 
-sleep 4
+sleep 15
 [ ! -e "/proc/${MASTER_PID}" ] && { echo "puppet master failed to start"; exit 1; }
 
-read -p "enter to continue.  ctrl-c to abort"
 /usr/bin/puppet agent \
 	--test \
 	--masterport=8120 \
+	--waitforcert=30 \
 	--server=$(hostname -f) \
 	--confdir=${TEMP_DIR}/puppet_etc \
 	--vardir=${TEMP_DIR}/puppet_tmp | perl -ple 's#^#puppetagent: #'
+
 read -p "enter to continue.  ctrl-c to abort"
 
 echo "Stopping temporary master"

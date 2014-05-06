@@ -22,7 +22,7 @@ LOCAL_HOSTNAME=$(/usr/bin/curl --silent http://169.254.169.254/latest/meta-data/
 HOSTNAME=$(ssh ubuntu@$ADDRESS 'hostname -f')
 [ -z "$HOSTNAME" ] && { echo "could not get hostname from ubuntu@$ADDRESS.  ssh problem?"; exit 1; }
 
-ssh ubuntu@$ADDRESS 'sudo apt-get update; sudo apt-get install -y puppet'
+ssh ubuntu@$ADDRESS 'wget https://apt.puppetlabs.com/puppetlabs-release-precise.deb; sudo dpkg -i puppetlabs-release-precise.deb; sudo apt-get update; sudo apt-get install -y puppet'
 
 INSTANCE_ID=$(ssh ubuntu@$ADDRESS '/usr/bin/curl --silent http://169.254.169.254/latest/meta-data/instance-id')
 
