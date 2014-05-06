@@ -32,6 +32,7 @@ echo "cloning puppet repo"
 git clone git@github.com:CranestyleLabs/PixelServerOps.git || { echo "failed to checkout repository"; exit 1; }
 cd PixelServerOps
 git submodule init
+git submodule update
 cd ..
 
 echo "checking for puppet install"
