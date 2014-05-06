@@ -30,6 +30,9 @@ echo "Made temp dir $TEMP_DIR"
 # Check out the repo first in case that fails
 echo "cloning puppet repo"
 git clone git@github.com:CranestyleLabs/PixelServerOps.git || { echo "failed to checkout repository"; exit 1; }
+cd PixelServerOps
+git submodule init
+cd ..
 
 echo "checking for puppet install"
 if dpkg -l puppetmaster > /dev/null; then
