@@ -75,7 +75,7 @@ ln -s "/etc/puppet/${GITHUB_REPO_NAME}" "/etc/puppet/${REPO_ALIAS}"
 
 echo "Creating temporary site.pp"
 echo "stage{'apt': before => Stage['main']}" >> $TEMP_DIR/site.pp
-echo "node \"$(hostname -f)\" {class{['base','puppet::master']: }}" >> $TEMP_DIR/site.pp
+echo "node \"$(hostname -f)\" {class{'role::puppetmaster': bootstrap => true }}" >> $TEMP_DIR/site.pp
 
 echo "$(/usr/bin/facter ipaddress) $INSTANCE_ID" >> /etc/hosts
 
