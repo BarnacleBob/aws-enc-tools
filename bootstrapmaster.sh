@@ -61,7 +61,7 @@ for dir in /etc/puppet /var/lib/puppet/ssl; do
 	mkdir -v ${dir}
 done
 
-
+chown puppet:puppet /var/lib/puppet/ssl
 
 # Check out the repo first in case that fails
 cd /etc/puppet
@@ -84,13 +84,12 @@ echo "Standing up temporary master"
 	--no-daemonize \
 	--verbose \
 	--masterport=8120 \
-	--certname=$INSTANCE_ID \
-	--dns_alt_names=$(hostname -f) \
+	--dns_alt_names="$(hostname -f),$INSTANCE_ID" \
 	--vardir=${TEMP_DIR}/puppet_tmp \
 	--confdir=${TEMP_DIR}/puppet_etc \
 	--modulepath=/etc/puppet/${REPO_ALIAS}/puppet/modules \
 	--manifest=${TEMP_DIR}/site.pp \
-	--autosign=true | tee ${TEMP_DIR}/master.log | perl -ple 's#^#puppetmaster: #' &
+	--autosign=true 2>&1 | tee ${TEMP_DIR}/master.log | perl -ple 's#^#puppetmaster: #' &
 
 
 i=0
@@ -107,12 +106,12 @@ done
 
 /usr/bin/puppet agent \
 	--test \
+	--no-report \
 	--masterport=8120 \
 	--waitforcert=30 \
 	--server=$INSTANCE_ID \
-	--certname=$INSTANCE_ID \
 	--confdir=${TEMP_DIR}/puppet_etc \
-	--vardir=${TEMP_DIR}/puppet_tmp | perl -ple 's#^#puppetagent: #'
+	--vardir=${TEMP_DIR}/puppet_tmp 2>&1 | perl -ple 's#^#puppetagent: #'
 
 read -p "enter to continue.  ctrl-c to abort"
 
@@ -120,9 +119,15 @@ echo "Stopping temporary master"
 kill $(cat ${TEMP_DIR}/puppet_tmp/run/master.pid)
 sleep 4
 
+service puppet master restart
+
 echo "Doing regular puppet run"
 echo "$(/usr/bin/facter ipaddress) $INSTANCE_ID" >> /etc/hosts
 /usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$INSTANCE_ID
+/usr/bin/puppet cert sign $INSTANCE_ID
+/usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$INSTANCE_ID
+
+
 
 echo "Cleaning up temp"
 rm -rf $TEMP_DIR
