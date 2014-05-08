@@ -44,13 +44,9 @@ else
 	apt-get update
 fi
 
-echo "checking for puppet install"
-if dpkg -l puppetmaster > /dev/null; then
-	echo "already installed"
-else
-	echo "installing"
-	apt-get -y install puppetmaster
-fi
+apt-get -y purge puppetmaster puppetdb
+
+apt-get -y install puppetmaster
 
 echo "stopping puppet master"
 service puppetmaster stop > /dev/null 2>&1
@@ -101,6 +97,7 @@ while [ "$i" -lt "120" ]; do
 		break
 	fi
 	sleep 1
+	i=$(( $i + 1 ))
 done
 
 [ ! -e "/proc/${MASTER_PID}" ] && { echo "puppet master failed to start"; exit 1; }
@@ -123,13 +120,22 @@ sleep 4
 
 service puppetmaster restart
 
+sleep 4
+
 echo "Doing regular puppet run"
 echo "$(/usr/bin/facter ipaddress) $INSTANCE_ID" >> /etc/hosts
 /usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$(facter ipaddress) --no-report
+
+# Puppetdb takes forever to start:
+i=0
+while [ "$i" -lt "300" ]; do
+	netstat -lpn  | grep -i ":8081" && break
+	sleep 1
+	i=$(( $i + 1 ))
+done
+
 echo "$(/usr/bin/facter ipaddress) $INSTANCE_ID" >> /etc/hosts
 /usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$INSTANCE_ID
-
-
 
 echo "Cleaning up temp"
 rm -rf $TEMP_DIR
