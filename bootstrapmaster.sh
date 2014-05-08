@@ -27,6 +27,9 @@ mkdir puppet_tmp
 mkdir puppet_etc
 echo "Made temp dir $TEMP_DIR"
 
+INSTANCE_ID=$(/usr/bin/curl --silent http://169.254.169.254/latest/meta-data/instance-id)
+[ -z "$INSTANCE_ID" ] && { echo "could not fetch instance id from metadataservice"; exit 1; }
+
 # Check out the repo first in case that fails
 echo "cloning puppet repo to test git connection"
 git clone git@github.com:CranestyleLabs/PixelServerOps.git || { echo "failed to checkout repository"; exit 1; }
@@ -72,13 +75,16 @@ ln -s "/etc/puppet/${GITHUB_REPO_NAME}" "/etc/puppet/${REPO_ALIAS}"
 
 echo "Creating temporary site.pp"
 echo "stage{'apt': before => Stage['main']}" >> $TEMP_DIR/site.pp
-echo "node \"$(hostname -f)\" {class{'base': is_puppet_master=>true}}" >> $TEMP_DIR/site.pp
+echo "node \"$(hostname -f)\" {class{['base','puppet::master']: }}" >> $TEMP_DIR/site.pp
+
+echo "$(/usr/bin/facter ipaddress) $INSTANCE_ID" >> /etc/hosts
 
 echo "Standing up temporary master"
 /usr/bin/puppet master \
 	--no-daemonize \
 	--verbose \
 	--masterport=8120 \
+	--certname=$INSTANCE_ID \
 	--dns_alt_names=$(hostname -f) \
 	--vardir=${TEMP_DIR}/puppet_tmp \
 	--confdir=${TEMP_DIR}/puppet_etc \
@@ -94,7 +100,8 @@ sleep 15
 	--test \
 	--masterport=8120 \
 	--waitforcert=30 \
-	--server=$(hostname -f) \
+	--server=$INSTANCE_ID \
+	--certname=$INSTANCE_ID \
 	--confdir=${TEMP_DIR}/puppet_etc \
 	--vardir=${TEMP_DIR}/puppet_tmp | perl -ple 's#^#puppetagent: #'
 
@@ -105,7 +112,7 @@ kill $(cat ${TEMP_DIR}/puppet_tmp/run/master.pid)
 sleep 4
 
 echo "Doing regular puppet run"
-/etc/puppet/puppetrun
+/usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$INSTANCE_ID
 
 echo "Cleaning up temp"
 rm -rf $TEMP_DIR
