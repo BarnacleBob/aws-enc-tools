@@ -55,12 +55,13 @@ fi
 echo "stopping puppet master"
 service puppetmaster stop > /dev/null 2>&1
 
-for dir in /etc/puppet /var/lib/puppet/ssl; do
+for dir in /etc/puppet /var/lib/puppet/ssl /etc/puppetdb; do
 	echo "backing up ${dir}"
 	mv -v ${dir} ${dir}.bootstrap-backup-$(date +%Y%m%d%H%M%S)
 	mkdir -v ${dir}
 done
 
+mkdir /etc/puppetdb/conf.d
 chown puppet:puppet /var/lib/puppet/ssl
 
 # Check out the repo first in case that fails
@@ -109,6 +110,7 @@ done
 	--no-report \
 	--masterport=8120 \
 	--waitforcert=30 \
+	--certname=$INSTANCE_ID \
 	--server=$(facter ipaddress) \
 	--confdir=${TEMP_DIR}/puppet_etc \
 	--vardir=${TEMP_DIR}/puppet_tmp 2>&1 | perl -ple 's#^#puppetagent: #'
@@ -123,9 +125,8 @@ service puppetmaster restart
 
 echo "Doing regular puppet run"
 echo "$(/usr/bin/facter ipaddress) $INSTANCE_ID" >> /etc/hosts
-/usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$(facter ipaddress)
-/usr/bin/puppet cert sign $INSTANCE_ID
-/usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$(facter ipaddress)
+/usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$(facter ipaddress) --no-report
+echo "$(/usr/bin/facter ipaddress) $INSTANCE_ID" >> /etc/hosts
 /usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$INSTANCE_ID
 
 
