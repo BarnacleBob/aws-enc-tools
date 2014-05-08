@@ -84,7 +84,7 @@ echo "Standing up temporary master"
 	--no-daemonize \
 	--verbose \
 	--masterport=8120 \
-	--dns_alt_names="$(hostname -f),$INSTANCE_ID" \
+	--dns_alt_names="$(hostname -f),$INSTANCE_ID,$(facter ipaddress)" \
 	--vardir=${TEMP_DIR}/puppet_tmp \
 	--confdir=${TEMP_DIR}/puppet_etc \
 	--modulepath=/etc/puppet/${REPO_ALIAS}/puppet/modules \
@@ -109,7 +109,7 @@ done
 	--no-report \
 	--masterport=8120 \
 	--waitforcert=30 \
-	--server=$INSTANCE_ID \
+	--server=$(facter ipaddress) \
 	--confdir=${TEMP_DIR}/puppet_etc \
 	--vardir=${TEMP_DIR}/puppet_tmp 2>&1 | perl -ple 's#^#puppetagent: #'
 
@@ -119,12 +119,13 @@ echo "Stopping temporary master"
 kill $(cat ${TEMP_DIR}/puppet_tmp/run/master.pid)
 sleep 4
 
-service puppet master restart
+service puppetmaster restart
 
 echo "Doing regular puppet run"
 echo "$(/usr/bin/facter ipaddress) $INSTANCE_ID" >> /etc/hosts
-/usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$INSTANCE_ID
+/usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$(facter ipaddress)
 /usr/bin/puppet cert sign $INSTANCE_ID
+/usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$(facter ipaddress)
 /usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$INSTANCE_ID
 
 
