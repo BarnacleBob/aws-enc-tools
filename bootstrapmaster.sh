@@ -90,10 +90,19 @@ echo "Standing up temporary master"
 	--confdir=${TEMP_DIR}/puppet_etc \
 	--modulepath=/etc/puppet/${REPO_ALIAS}/puppet/modules \
 	--manifest=${TEMP_DIR}/site.pp \
-	--autosign=true | perl -ple 's#^#puppetmaster: #' &
+	--autosign=true | tee ${TEMP_DIR}/master.log | perl -ple 's#^#puppetmaster: #' &
 
 
-sleep 15
+i=0
+while [ "$i" -lt "120" ]; do
+	grep -irl "Notice: Starting Puppet master version" ${TEMP_DIR}/master.log > /dev/null 2>&1
+	RET=$?
+	if [ "$RET" -eq "0" ]; then
+		break
+	fi
+	sleep 1
+done
+
 [ ! -e "/proc/${MASTER_PID}" ] && { echo "puppet master failed to start"; exit 1; }
 
 /usr/bin/puppet agent \
@@ -112,6 +121,7 @@ kill $(cat ${TEMP_DIR}/puppet_tmp/run/master.pid)
 sleep 4
 
 echo "Doing regular puppet run"
+echo "$(/usr/bin/facter ipaddress) $INSTANCE_ID" >> /etc/hosts
 /usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$INSTANCE_ID
 
 echo "Cleaning up temp"
