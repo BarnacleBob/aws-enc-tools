@@ -130,12 +130,15 @@ echo "$(/usr/bin/facter ipaddress) $INSTANCE_ID" >> /etc/hosts
 /usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$(facter ipaddress) --no-report
 
 # Puppetdb takes forever to start:
+echo "waiting for puppetdb to start up"
 i=0
 while [ "$i" -lt "300" ]; do
+	echo -n "."
 	netstat -lpn  | grep -i ":8081" && break
 	sleep 1
 	i=$(( $i + 1 ))
 done
+echo " started"
 
 echo "$(/usr/bin/facter ipaddress) $INSTANCE_ID" >> /etc/hosts
 /usr/bin/puppet agent --test --certname=$INSTANCE_ID --server=$INSTANCE_ID
