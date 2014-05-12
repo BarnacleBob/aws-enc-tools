@@ -30,6 +30,9 @@ echo "Made temp dir $TEMP_DIR"
 INSTANCE_ID=$(/usr/bin/curl --silent http://169.254.169.254/latest/meta-data/instance-id)
 [ -z "$INSTANCE_ID" ] && { echo "could not fetch instance id from metadataservice"; exit 1; }
 
+apt-get update
+apt-get -y install git
+
 # Check out the repo first in case that fails
 echo "cloning puppet repo to test git connection"
 git clone git@github.com:CranestyleLabs/PixelServerOps.git || { echo "failed to checkout repository"; exit 1; }
