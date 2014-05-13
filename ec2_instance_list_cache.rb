@@ -12,6 +12,10 @@ CACHE_DIR='/var/lib/puppet/ec2'
 CACHE_FILE=CACHE_DIR + '/instance_cache.yaml'
 CACHE_TIMEOUT=300
 
+if File.stat(CACHE_DIR).uid != Process.uid
+	abort 'please run this as the same user as puppetmaster runs'
+end
+
 Dir.mkdir(CACHE_DIR) unless File.exists?(CACHE_DIR)
 
 def metadata_fetch(item)

@@ -11,6 +11,10 @@ log.level=Logger::ERROR
 CACHE_FILE='/var/lib/puppet/ec2/instance_cache.yaml'
 CACHE_UPDATER=File.dirname(__FILE__) + '/ec2_instance_list_cache.rb'
 
+if File.stat(CACHE_FILE).uid != Process.uid
+	abort 'please run this as the same user as puppetmaster runs'
+end
+
 if ARGV.length < 0
 	abort 'please pass an instance-id to classify'
 end
