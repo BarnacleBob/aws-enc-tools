@@ -79,6 +79,9 @@ echo "node \"$(hostname -f)\" {class{'role::puppetmaster': bootstrap => true }}"
 
 echo "$(/usr/bin/facter ipaddress) $INSTANCE_ID" >> /etc/hosts
 
+echo "fixing facter bug on vpc instances"
+cp /etc/puppet/${REPO_ALIAS}/puppet/modules/base/lib/facter/vpc_ec2_fix.pp /usr/lib/ruby/vendor_ruby/facter/ec2.rb
+
 echo "Standing up temporary master"
 /usr/bin/puppet master \
 	--no-daemonize \

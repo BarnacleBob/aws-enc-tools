@@ -10,7 +10,7 @@ class Utils
 	attr_reader :log	
 	def initialize()
 		@log = Logger.new(STDERR)
-		@log.level = Logger::INFO
+		@log.level = Logger::ERROR
 	end
 
 	def uri_fetch(uri)

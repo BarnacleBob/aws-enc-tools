@@ -1,46 +1,39 @@
 #!/bin/bash
 
-ROOT_DIR=/etc/puppet/puppet_repo
+exec 2>&1
+
 ADDRESS=$1
-NODECONFIG=$2
+SSH_KEY='/var/lib/puppet/.ssh/PuppetMasterAutoConfigure.pem'
+ssh="ssh -i $SSH_KEY -o StrictHostKeyChecking=no "
 
-function list_nodeconfigs(){
-	echo "valid nodeconfigs:"
-	find $ROOT_DIR/node_classification/ -type f -name '*.yaml' -printf '%f\n' | cut -d. -f1
-}
-
-[ ! -e "$ROOT_DIR" ] && { echo "please run this from the puppet master"; exit 1; }
-
-[ -z "$NODECONFIG" ] && { echo "usage: $(basename $0) (address|hostname) nodeconfig"; list_nodeconfigs; exit 1; }
-[ ! -e "$ROOT_DIR/node_classification/$NODECONFIG.yaml" ] && { echo "invalid node config"; list_nodeconfigs; exit 1; }
-[ -z "$SSH_AUTH_SOCK"  ] && { echo "Please make sure the ssh key to access the new machine is available in an agent"; exit 1; }
-[ "$(cd $ROOT_DIR; git status --porcelain | grep -v '?' | wc -l)" -ne "0" ] && { echo "the git repo at $ROOT_DIR is in a strange state such as modified but uncommitted files"; exit 1; }
-
-
+[ ! -r "$SSH_KEY" ] && { echo "$SSH_KEY cannot be found or read.  cannot continue"; exit 1; }
 
 LOCAL_HOSTNAME=$(/usr/bin/curl --silent http://169.254.169.254/latest/meta-data/local-hostname)
-HOSTNAME=$(ssh ubuntu@$ADDRESS 'hostname -f')
+[ -z "$LOCAL_HOSTNAME" ] && { echo "Could not contact metadata service"; exit 1; }
+
+# Clear host keys for this host
+ssh-keygen -R $ADDRESS
+
+HOSTNAME=$($ssh ubuntu@$ADDRESS 'hostname -f')
 [ -z "$HOSTNAME" ] && { echo "could not get hostname from ubuntu@$ADDRESS.  ssh problem?"; exit 1; }
 
-ssh ubuntu@$ADDRESS 'wget https://apt.puppetlabs.com/puppetlabs-release-precise.deb; sudo dpkg -i puppetlabs-release-precise.deb; sudo apt-get update; sudo apt-get install -y puppet'
+# Fix facter for vpc's
+scp -i $SSH_KEY /usr/lib/ruby/vendor_ruby/facter/ec2.rb ubuntu@$ADDRESS:ec2.rb
+$ssh ubuntu@$ADDRESS 'sudo mv ec2.rb /usr/lib/ruby/vendor_ruby/facter/ec2.rb
 
-INSTANCE_ID=$(ssh ubuntu@$ADDRESS '/usr/bin/curl --silent http://169.254.169.254/latest/meta-data/instance-id')
+$ssh ubuntu@$ADDRESS 'wget https://apt.puppetlabs.com/puppetlabs-release-precise.deb; sudo dpkg -i puppetlabs-release-precise.deb; sudo apt-get update; sudo apt-get install -y puppet'
+
+INSTANCE_ID=$($ssh ubuntu@$ADDRESS '/usr/bin/curl --silent http://169.254.169.254/latest/meta-data/instance-id')
 
 SERVER_INSTANCE_ID=$(/usr/bin/curl --silent http://169.254.169.254/latest/meta-data/instance-id)
 SERVER_IP=$(facter ipaddress)
 
-ssh ubuntu@$ADDRESS "sudo bash -c 'echo $SERVER_IP\ $SERVER_INSTANCE_ID >> /etc/hosts'"
+$ssh ubuntu@$ADDRESS "sudo bash -c 'echo $SERVER_IP\ $SERVER_INSTANCE_ID >> /etc/hosts'"
 
-cd $ROOT_DIR/node_classification
-sudo ln -s $NODECONFIG.yaml $INSTANCE_ID.yaml
-sudo git add $INSTANCE_ID.yaml
-sudo git commit -m "bootstrapclient.sh adding $INSTANCE_ID as $NODECONFIG"
-sudo -E git push -u origin master
-
-ssh ubuntu@$ADDRESS "sudo puppet agent --test --waitforcert=30 --server=${SERVER_INSTANCE_ID} --certname=${INSTANCE_ID}" &
+$ssh ubuntu@$ADDRESS "sudo puppet agent --test --waitforcert=30 --server=${SERVER_INSTANCE_ID} --certname=${INSTANCE_ID}" &
 RUN_PID=$!
 sleep 15
-sudo -E puppet cert sign ${INSTANCE_ID}
+
+puppet cert --config=/etc/puppet/puppet.conf sign ${INSTANCE_ID}
 
 wait $RUN_PID
-
