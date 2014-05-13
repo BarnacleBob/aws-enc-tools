@@ -4,7 +4,7 @@ require 'logger'
 require 'yaml'
 require 'etc'
 
-require File.dirname(__FILE__) + '/ec2_instances.rb'
+require File.dirname(__FILE__) + '/script_utils.rb'
 
 if Etc.getpwuid(Process.uid).name != 'puppet'
 	abort 'please run this as puppet'
@@ -39,3 +39,4 @@ node_config={
 }
 	
 puts YAML.dump(node_config)
+
