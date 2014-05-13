@@ -47,7 +47,7 @@ end
 
 role = instance['Tags']['puppet_role']
 node_config={
-	'classes'=> {role => nil},
+	'classes'=> {'role::' + role => nil},
 	'params' => nil
 }
 	
