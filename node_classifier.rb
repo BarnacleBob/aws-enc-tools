@@ -1,21 +1,16 @@
 #!/usr/bin/ruby
 
-require 'json'
 require 'logger'
-require 'pathname'
 require 'yaml'
+require 'etc'
 
-log=Logger.new(STDOUT)
-log.level=Logger::ERROR
+require File.dirname(__FILE__) + '/ec2_instances.rb'
 
-CACHE_FILE='/var/lib/puppet/ec2/instance_cache.yaml'
-CACHE_UPDATER=File.dirname(__FILE__) + '/ec2_instance_list_cache.rb'
-
-if File.stat(CACHE_FILE).uid != Process.uid
-	abort 'please run this as the same user as puppetmaster runs'
+if Etc.getpwuid(Process.uid).name != 'puppet'
+	abort 'please run this as puppet'
 end
 
-if ARGV.length < 0
+if ARGV.length < 1
 	abort 'please pass an instance-id to classify'
 end
 
@@ -25,15 +20,7 @@ if not instance_id =~ /^i-[a-zA-Z0-9]+$/
 	abort "#{instance_id} does not look like a ec2 instance id"
 end
 
-if not File.exists?(CACHE_FILE)
-	`#{CACHE_UPDATER}`
-end
-
-instances=YAML.load( IO.read( CACHE_FILE ) )
-
-if instances.empty?
-	abort 'failed to load instances from cache file'
-end
+instances=Ec2Instances.new()
 
 if not instances.has_key?(instance_id)
 	abort "could not find instance with id #{instance_id} in yaml cache"
