@@ -5,12 +5,22 @@ require 'logger'
 require 'json'
 require 'yaml'
 require 'timeout'
+require 'singleton'
+require 'etc'
 
 class Utils
-	attr_reader :log	
+	include Singleton
+	attr_reader :log
+
 	def initialize()
 		@log = Logger.new(STDERR)
 		@log.level = Logger::ERROR
+	end
+	
+	def runas(user)
+		if Etc.getpwuid(Process.uid).name != user
+			abort("please run this as #{user}")
+		end
 	end
 
 	def uri_fetch(uri)
@@ -47,11 +57,29 @@ class Utils
 		end
 		return command_out
 	end
+
+	def lock_file(file_path)
+		lock_file = File.new(file_path, 'w')
+
+		locked = lock_file.flock( File::LOCK_NB|File::LOCK_EX )
+		if locked
+			return lock_file
+		end
+		return locked
+	end
+	
+	def unlock_file(locked_file)
+		unlocked = locked_file.flock(File::LOCK_UN)
+		if unlocked
+			locked_file.close()
+		end
+		return unlocked
+	end	
 end
 
 class Ec2Cli
-	def initialize
-		@utils = Utils.new()
+	def initialize()
+		@utils = Utils.instance
 		@default_region = nil
 	end
 
@@ -87,8 +115,8 @@ end
 
 
 class Ec2Instances
-	def initialize(timeout=300)		
-		@utils = Utils.new()
+	def initialize(timeout=300)
+		@utils = Utils.instance
 		@ec2 = Ec2Cli.new()
 		@utils.log.info('Ec2Instances cache starting up')
 
@@ -168,8 +196,8 @@ class Ec2Instances
 end
 
 class PuppetInventory
-	def initialize(timeout=300)
-		@utils = Utils.new()
+	def initialize()
+		@utils = Utils.instance
 		
 		@utils.log.info('PuppetInventory Starting up')
 		@nodes = nil

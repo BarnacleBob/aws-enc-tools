@@ -2,13 +2,11 @@
 
 require 'logger'
 require 'yaml'
-require 'etc'
 
 require File.dirname(__FILE__) + '/script_utils.rb'
 
-if Etc.getpwuid(Process.uid).name != 'puppet'
-	abort 'please run this as puppet'
-end
+utils = Utils.instance 
+utils.runas('puppet')
 
 if ARGV.length < 1
 	abort 'please pass an instance-id to classify'
@@ -16,6 +14,10 @@ end
 
 instance_id = ARGV[0]
 
+if ARGV[1]=="infolog"
+	utils.log.level = Logger::INFO
+end
+    
 if not instance_id =~ /^i-[a-zA-Z0-9]+$/
 	abort "#{instance_id} does not look like a ec2 instance id"
 end

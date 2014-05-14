@@ -1,16 +1,21 @@
 #!/usr/bin/ruby
 
-require 'open-uri'
-require 'json'
-require 'yaml'
-require 'etc'
+require 'logger'
 
 require File.dirname(__FILE__) + '/script_utils.rb'
 
 SETUP_SCRIPT = File.dirname(__FILE__) + '/bootstrapclient.sh'
 
-if Etc.getpwuid(Process.uid).name != 'puppet'
-	abort 'please run this as puppet'
+utils = Utils.instance
+if ARGV[0]=="infolog"
+	utils.log.level = Logger::INFO
+end
+
+utils.runas('puppet')
+
+lock = utils.lock_file('/var/lib/puppet/ec2/new_instance_scanner.lock')
+if not lock
+	abort("Could not get lock.  instance already running")
 end
 
 inventory_service = PuppetInventory.new()
@@ -18,7 +23,6 @@ puppet_nodes = inventory_service.nodes()
 instances=Ec2Instances.new(timeout=60)
 
 ec2_cli = Ec2Cli.new()
-utils = Utils.new()
 
 instances.each do |instance_id, instance|
 	utils.log.info("checking instance #{instance_id}")
@@ -46,3 +50,5 @@ instances.each do |instance_id, instance|
 	
 	utils.log
 end
+
+utils.unlock_file(lock)
