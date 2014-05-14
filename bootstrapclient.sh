@@ -17,11 +17,12 @@ ssh-keygen -R $ADDRESS > /dev/null 2>&1
 HOSTNAME=$($ssh ubuntu@$ADDRESS 'hostname -f')
 [ -z "$HOSTNAME" ] && { echo "could not get hostname from ubuntu@$ADDRESS.  ssh problem?"; exit 1; }
 
+$ssh ubuntu@$ADDRESS 'wget https://apt.puppetlabs.com/puppetlabs-release-precise.deb'
+$ssh ubuntu@$ADDRESS 'sudo dpkg -i puppetlabs-release-precise.deb; sudo apt-get update; sudo apt-get install -y puppet'
+
 # Fix facter for vpc's
 scp -i $SSH_KEY /usr/lib/ruby/vendor_ruby/facter/ec2.rb ubuntu@$ADDRESS:ec2.rb
 $ssh ubuntu@$ADDRESS 'sudo mv ec2.rb /usr/lib/ruby/vendor_ruby/facter/ec2.rb'
-
-$ssh ubuntu@$ADDRESS 'wget https://apt.puppetlabs.com/puppetlabs-release-precise.deb; sudo dpkg -i puppetlabs-release-precise.deb; sudo apt-get update; sudo apt-get install -y puppet'
 
 INSTANCE_ID=$($ssh ubuntu@$ADDRESS '/usr/bin/curl --silent http://169.254.169.254/latest/meta-data/instance-id')
 
