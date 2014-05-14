@@ -118,7 +118,7 @@ done
 	--confdir=${TEMP_DIR}/puppet_etc \
 	--vardir=${TEMP_DIR}/puppet_tmp 2>&1 | perl -ple 's#^#puppetagent: #'
 
-read -p "enter to continue.  ctrl-c to abort"
+sleep 4
 
 echo "Stopping temporary master"
 kill $(cat ${TEMP_DIR}/puppet_tmp/run/master.pid)
