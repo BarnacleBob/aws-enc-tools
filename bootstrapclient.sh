@@ -38,3 +38,11 @@ sleep 15
 puppet cert --config=/etc/puppet/puppet.conf sign ${INSTANCE_ID}
 
 wait $RUN_PID
+
+PUPPET_EXIT=$?
+
+if [ "$PUPPET_EXIT" -eq "2" ]; then
+	exit 0
+fi
+
+exit $PUPPET_EXIT

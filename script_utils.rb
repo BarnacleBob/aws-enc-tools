@@ -7,14 +7,32 @@ require 'yaml'
 require 'timeout'
 require 'singleton'
 require 'etc'
+require 'syslog'
 
 class Utils
 	include Singleton
 	attr_reader :log
+	attr_reader :syslog
 
 	def initialize()
 		@log = Logger.new(STDERR)
 		@log.level = Logger::ERROR
+		@syslog = Syslog.open($0, Syslog::LOG_PID | Syslog::LOG_CONS)
+
+		@ec2_work_dir = '/var/lib/puppet/ec2'
+	end
+	
+	def get_next_friendly_name(type)
+		serial_file = @ec2_work_dir + "/#{type}.serial"
+		prev_serial = 0
+		if File.exists?(serial_file)
+			prev_serial = IO.read(serial_file)
+		end
+		serial = prev_serial + 1
+		f=File.new(serial_file, 'w')
+		f.write(serial)
+		f.close()
+		return serial
 	end
 	
 	def runas(user)
@@ -120,7 +138,7 @@ class Ec2Instances
 		@ec2 = Ec2Cli.new()
 		@utils.log.info('Ec2Instances cache starting up')
 
-		@cache_dir = '/var/lib/puppet/ec2'
+		@cache_dir = @utils.ec2_work_dir
 		@cache_file = @cache_dir + '/instance_cache.yaml'
 		@cache_timeout = timeout
 		@instances = load_cache()

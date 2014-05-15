@@ -7,7 +7,7 @@ require File.dirname(__FILE__) + '/script_utils.rb'
 SETUP_SCRIPT = File.dirname(__FILE__) + '/bootstrapclient.sh'
 
 utils = Utils.instance
-if ARGV[0]=="infolog"
+if ARGV[0]=='infolog'
 	utils.log.level = Logger::INFO
 end
 
@@ -15,7 +15,7 @@ utils.runas('puppet')
 
 lock = utils.lock_file('/var/lib/puppet/ec2/new_instance_scanner.lock')
 if not lock
-	abort("Could not get lock.  instance already running")
+	abort('Could not get lock.  instance already running')
 end
 
 inventory_service = PuppetInventory.new()
@@ -37,18 +37,26 @@ instances.each do |instance_id, instance|
 		next
 	end
 
-	if not instance["Tags"].has_key?('puppet_role')
+	if not instance['Tags'].has_key?('puppet_role')
 		utils.error("Unsetup instance #{instance_id} does not have a puppet_role tag")
 		next
 	end
 	
 	utils.log.info("calling setup for #{instance_id}")
-	instance_address = instance["PrivateIpAddress"]
+	utils.syslog.info("new_instance_scanner calling setup for #{instance_id}")
+	instance_address = instance['PrivateIpAddress']
 	output=utils.cmd("#{SETUP_SCRIPT} #{instance_address}")
 	
 	utils.log.info(output)
-	
-	utils.log
+
+	if output:
+		utils.syslog.info("new_instance_scanner setup #{instance_id} succesfully")
+		#only tag instance if setup completed
+		name_tag = utils.get_next_friendly_name(instance['Tags']['puppet_role'])
+		ec2_cli.cli("create-tags --resources #{instance_id} --tags Name=Name,Value=#{name_tag}")
+	end
+	utils.syslog.info("new_instance_scanner completed #{instance_id} succesfully")
 end
 
 utils.unlock_file(lock)
+
