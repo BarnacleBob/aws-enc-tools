@@ -123,7 +123,7 @@ class Ec2Cli
 			return nil
 		end
 		
-		ec2_command_out=@utils.cmd("/usr/local/bin/aws --region=#{region} ec2 #{command}")
+		ec2_command_out=@utils.cmd("/usr/local/bin/aws --region=#{region} ec2 #{command} 2>&1")
 		if not ec2_command_out or ec2_command_out.empty?
 			@utils.log.error("aws api command #{command} failed")
 			return nil
