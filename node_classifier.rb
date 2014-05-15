@@ -43,7 +43,7 @@ end
 
 node_config={
 	'classes'=> {'role::' + role => nil},
-	'params' => params
+	'parameters' => params
 }
 	
 puts YAML.dump(node_config)
