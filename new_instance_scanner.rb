@@ -54,8 +54,10 @@ instances.each do |instance_id, instance|
 		#only tag instance if setup completed
 		name_tag = utils.get_next_friendly_name(instance['Tags']['puppet_role'])
 		ec2_cli.cli("create-tags --resources #{instance_id} --tags Name=Name,Value=#{name_tag}")
+		utils.syslog.info("new_instance_scanner completed #{instance_id} succesfully")
+	else
+		utils.syslog.info("new_instance_scanner completed #{instance_id} with failures")
 	end
-	utils.syslog.info("new_instance_scanner completed #{instance_id} succesfully")
 end
 
 utils.unlock_file(lock)

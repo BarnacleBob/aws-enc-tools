@@ -13,6 +13,7 @@ class Utils
 	include Singleton
 	attr_reader :log
 	attr_reader :syslog
+	attr_reader :ec2_work_dir
 
 	def initialize()
 		@log = Logger.new(STDERR)
