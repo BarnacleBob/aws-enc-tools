@@ -35,9 +35,15 @@ if not instance['Tags'].has_key?('puppet_role')
 end
 
 role = instance['Tags']['puppet_role']
+params = nil
+if instance['Tags']['Name'] =~ /[a-zA-Z0-9\-_]+/
+	utils.log.info("Found friendly name #{instance['Tags']['Name']}")
+	params = { 'friendly_hostname' => instance['Tags']['Name'] }
+end
+
 node_config={
 	'classes'=> {'role::' + role => nil},
-	'params' => nil
+	'params' => params
 }
 	
 puts YAML.dump(node_config)
