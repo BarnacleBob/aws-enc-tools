@@ -33,7 +33,7 @@ class Utils
 		f=File.new(serial_file, 'w')
 		f.write(serial)
 		f.close()
-		return serial
+		return "#{type}-#{serial}"
 	end
 	
 	def runas(user)
@@ -124,7 +124,7 @@ class Ec2Cli
 		end
 		
 		ec2_command_out=@utils.cmd("/usr/local/bin/aws --region=#{region} ec2 #{command}")
-		if ec2_command_out.empty?
+		if not ec2_command_out or ec2_command_out.empty?
 			@utils.log.error("aws api command #{command} failed")
 			return nil
 		end
