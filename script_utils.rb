@@ -27,7 +27,7 @@ class Utils
 		serial_file = @ec2_work_dir + "/#{type}.serial"
 		prev_serial = 0
 		if File.exists?(serial_file)
-			prev_serial = IO.read(serial_file)
+			prev_serial = IO.read(serial_file).to_i
 		end
 		serial = prev_serial + 1
 		f=File.new(serial_file, 'w')
