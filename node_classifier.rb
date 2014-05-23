@@ -35,10 +35,18 @@ if not instance['Tags'].has_key?('puppet_role')
 end
 
 role = instance['Tags']['puppet_role']
-params = nil
+params = {}
 if instance['Tags']['Name'] =~ /[a-zA-Z0-9\-_]+/
 	utils.log.info("Found friendly name #{instance['Tags']['Name']}")
-	params = { 'friendly_hostname' => instance['Tags']['Name'] }
+	params['friendly_hostname'] = instance['Tags']['Name']
+end
+
+if instance['Tags'].has_key?('application')
+	params['application'] = instance['Tags']['application']
+end
+
+if params.empty?
+	params = nil
 end
 
 node_config={
