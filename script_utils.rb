@@ -170,12 +170,14 @@ class Ec2Instances
 	end
 
 	def colapse_ec2_tags(instance)
-		instance["RawTags"] = instance["Tags"]
-		tags = {}
-		instance["Tags"].each do |tag|
-			tags[ tag["Key"] ] = tag["Value"]
+		if instance.has_key?('Tags')
+			instance["RawTags"] = instance["Tags"].clone
+			tags = {}
+			instance["Tags"].each do |tag|
+				tags[ tag["Key"] ] = tag["Value"]
+			end
+			instance["Tags"] = tags
 		end
-		instance["Tags"] = tags
 	end
 
 	def update_cache
