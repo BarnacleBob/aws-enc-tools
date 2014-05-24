@@ -56,6 +56,9 @@ instances.each do |instance_id, instance|
 		if instance['Tags'].has_key?('application')
 			name_prefix = name_prefix + "-" + instance['Tags']['application']
 		end
+		if instance['Tags'].has_key?('app_environment')
+			name_prefix = name_prefix + "-" + instance['Tags']['app_environment']
+		end
 		name_tag = utils.get_next_friendly_name(name_prefix)
 		ec2_cli.cli("create-tags --resources #{instance_id} --tags Key=Name,Value=#{name_tag}")
 		utils.syslog.info("new_instance_scanner completed #{instance_id} succesfully")
