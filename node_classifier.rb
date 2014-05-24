@@ -35,7 +35,7 @@ if not instance['Tags'].has_key?('puppet_role')
 end
 
 role = instance['Tags']['puppet_role']
-params = instance['Tags']
+params = instance['Tags'].clone
 params.delete('Name')
 if instance['Tags']['Name'] =~ /[a-zA-Z0-9\-_]+/
 	utils.log.info("Found friendly name #{instance['Tags']['Name']}")
