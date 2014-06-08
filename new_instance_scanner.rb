@@ -4,7 +4,7 @@ require 'logger'
 
 require File.dirname(__FILE__) + '/script_utils.rb'
 
-SETUP_SCRIPT = File.dirname(__FILE__) + '/bootstrapclient.sh'
+SETUP_SCRIPT = File.dirname(__FILE__) + '/new_instance_setup.rb'
 
 utils = Utils.instance
 if ARGV[0]=='infolog'
@@ -44,27 +44,10 @@ instances.each do |instance_id, instance|
 	
 	utils.log.info("calling setup for #{instance_id}")
 	utils.syslog.info("new_instance_scanner calling setup for #{instance_id}")
-	instance_address = instance['PrivateIpAddress']
-	output=utils.cmd("#{SETUP_SCRIPT} #{instance_address}")
-	
-	utils.log.info(output)
-
-	if output:
-		utils.syslog.info("new_instance_scanner setup #{instance_id} succesfully")
-		#only tag instance if setup completed
-		name_prefix = instance['Tags']['puppet_role']
-		if instance['Tags'].has_key?('application')
-			name_prefix = name_prefix + "-" + instance['Tags']['application']
-		end
-		if instance['Tags'].has_key?('app_environment')
-			name_prefix = name_prefix + "-" + instance['Tags']['app_environment']
-		end
-		name_tag = utils.get_next_friendly_name(name_prefix)
-		ec2_cli.cli("create-tags --resources #{instance_id} --tags Key=Name,Value=#{name_tag}")
-		utils.syslog.info("new_instance_scanner completed #{instance_id} succesfully")
-	else
-		utils.syslog.info("new_instance_scanner completed #{instance_id} with failures")
+	pid = fork do
+		exec "#{SETUP_SCRIPT} #{instance_id}"
 	end
+	Process.detach(pid)
 end
 
 utils.unlock_file(lock)

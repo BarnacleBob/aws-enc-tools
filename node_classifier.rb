@@ -39,7 +39,8 @@ params = instance['Tags'].clone
 params.delete('Name')
 if instance['Tags']['Name'] =~ /[a-zA-Z0-9\-_]+/
 	utils.log.info("Found friendly name #{instance['Tags']['Name']}")
-	params['friendly_hostname'] = instance['Tags']['Name']
+	# strip off the ---status suffix if it has one
+	params['friendly_hostname'] = instance['Tags']['Name'].sub(/---.*$/, '')
 end
 
 if params.empty?

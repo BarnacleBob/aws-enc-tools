@@ -8,6 +8,8 @@ require 'timeout'
 require 'singleton'
 require 'etc'
 require 'syslog'
+require 'net/smtp'
+require 'socket'
 
 class Utils
 	include Singleton
@@ -21,6 +23,18 @@ class Utils
 		@syslog = Syslog.open($0, Syslog::LOG_PID | Syslog::LOG_CONS)
 
 		@ec2_work_dir = '/var/lib/puppet/ec2'
+	end
+	
+	def email(to, subject, contents)
+		headers = [
+			"From: #{Etc.getlogin}  <#{Etc.getlogin}@#{Socket.gethostname}>",
+			"To: #{to}",
+			"Subject: #{subject}"
+		]
+		message = headers.join("\n") + "\n" + contents
+		Net::SMTP.start('localhost') do |smtp|
+			smtp.send_message(message, "#{Etc.getlogin}@#{Socket.gethostname}", to)
+		end
 	end
 	
 	def get_next_friendly_name(type)
