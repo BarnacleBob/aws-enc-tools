@@ -8,7 +8,6 @@ require 'timeout'
 require 'singleton'
 require 'etc'
 require 'syslog'
-require 'net/smtp'
 require 'socket'
 
 class Utils
@@ -31,10 +30,11 @@ class Utils
 			"To: #{to}",
 			"Subject: #{subject}"
 		]
-		message = headers.join("\n") + "\n" + contents
-		Net::SMTP.start('localhost') do |smtp|
-			smtp.send_message(message, "#{Etc.getlogin}@#{Socket.gethostname}", to)
-		end
+		message = headers.join("\n") + "\n" + contents + "\n"
+		IO.popen("mail -s '#{subject}' #{to}", 'w+') { |m|
+			m.write(message)
+			m.write("\n.\n")
+		}
 	end
 	
 	def get_next_friendly_name(type)
