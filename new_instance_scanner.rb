@@ -42,12 +42,18 @@ instances.each do |instance_id, instance|
 		next
 	end
 	
+	if instance['Tags'].has_key?('InSetup')
+		utils.log.info("instance #{instance_id} being setup already")
+		next
+	end
+	
 	utils.log.info("calling setup for #{instance_id}")
 	utils.syslog.info("new_instance_scanner calling setup for #{instance_id}")
 	pid = fork do
 		exec "#{SETUP_SCRIPT} #{instance_id}"
 	end
 	Process.detach(pid)
+	$ec2_cli.cli("create-tags --resources #{instance_id} --tags Key=InSetup,Value=true")
 end
 
 utils.unlock_file(lock)
