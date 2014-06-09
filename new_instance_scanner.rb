@@ -49,11 +49,11 @@ instances.each do |instance_id, instance|
 	
 	utils.log.info("calling setup for #{instance_id}")
 	utils.syslog.info("new_instance_scanner calling setup for #{instance_id}")
+	ec2_cli.cli("create-tags --resources #{instance_id} --tags Key=InSetup,Value=true")
 	pid = fork do
 		exec "#{SETUP_SCRIPT} #{instance_id}"
 	end
 	Process.detach(pid)
-	ec2_cli.cli("create-tags --resources #{instance_id} --tags Key=InSetup,Value=true")
 end
 
 utils.unlock_file(lock)
