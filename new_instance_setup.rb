@@ -63,11 +63,11 @@ if result == 0
 	UpdateInstanceName(instance_id, instance_name)
 	status = "success"
 
-	$ec2_cli.cli("create-tags --resources #{instance_id} --tags Key=InSetup")
+	$ec2_cli.cli("delete-tags --resources #{instance_id} --tags Key=InSetup")
 else
 	Log("new_instance_setup completed #{instance_id} with failures")
 	UpdateInstanceName(instance_id, instance_name, "failed")
 	status = "failed"
 end
 
-$utils.email('adsynth-ops@cranestylelabs.com', "#{instance_id} setup log: #{status}", output)
+$utils.email('adsynth-ops@threadbaregames.com', "#{instance_id} setup log: #{status}", output)
