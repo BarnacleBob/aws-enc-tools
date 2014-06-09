@@ -70,4 +70,4 @@ else
 	status = "failed"
 end
 
-$utils.email('adsynth-ops', "#{instance_id} setup log: #{status}", output)
+$utils.email('adsynth-ops@cranestylelabs.com', "#{instance_id} setup log: #{status}", output)

@@ -53,7 +53,7 @@ instances.each do |instance_id, instance|
 		exec "#{SETUP_SCRIPT} #{instance_id}"
 	end
 	Process.detach(pid)
-	$ec2_cli.cli("create-tags --resources #{instance_id} --tags Key=InSetup,Value=true")
+	ec2_cli.cli("create-tags --resources #{instance_id} --tags Key=InSetup,Value=true")
 end
 
 utils.unlock_file(lock)
