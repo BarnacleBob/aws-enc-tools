@@ -25,7 +25,7 @@ end
 def GetInstanceName(instance)
 	name_prefix = instance['Tags']['puppet_role']
 	if instance['Tags'].has_key?('application')
-		name_prefix = name_prefix + "-" + instance['Tags']['application']
+		name_prefix = name_prefix + "-" + instance['Tags']['application'].split(',')[0]
 	end
 	if instance['Tags'].has_key?('app_environment')
 		name_prefix = name_prefix + "-" + instance['Tags']['app_environment']
