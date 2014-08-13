@@ -43,14 +43,10 @@ if instance['Tags']['Name'] =~ /[a-zA-Z0-9\-_]+/
 	params['friendly_hostname'] = instance['Tags']['Name'].sub(/---.*$/, '')
 end
 
-if params.empty?
-	params = nil
-end
+node_config={}
+node_config['classes'] = {'role::' + role => nil}
+node_config['parameters'] = params unless params.empty?
+node_config['environment'] = instance['Tags']['environment'] if instance['Tags'].has_key?('environment')
 
-node_config={
-	'classes'=> {'role::' + role => nil},
-	'parameters' => params
-}
-	
 puts YAML.dump(node_config)
 
