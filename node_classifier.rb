@@ -30,23 +30,42 @@ end
 
 instance = instances[instance_id]
 
-if not instance['Tags'].has_key?('puppet_role')
-	abort "instance with id #{instance_id} found but has no puppet_role tag"
-end
+if instance['Tags'].has_key?('profile')
+  if not instance['Tags'].has_key?('role')
+	  abort "instance with id #{instance_id} found but has no role tag"
+  end
 
-role = instance['Tags']['puppet_role']
-params = instance['Tags'].clone
-params.delete('Name')
-if instance['Tags']['Name'] =~ /[a-zA-Z0-9\-_]+/
-	utils.log.info("Found friendly name #{instance['Tags']['Name']}")
-	# strip off the ---status suffix if it has one
-	params['friendly_hostname'] = instance['Tags']['Name'].sub(/---.*$/, '')
-end
+  params = instance['Tags'].clone
+  params.delete('Name')
+  params.delete('environment') if params.has_key?('environment')
+  if instance['Tags']['Name'] =~ /[a-zA-Z0-9\-_]+/
+	  utils.log.info("Found friendly name #{instance['Tags']['Name']}")
+	  # strip off the ---status suffix if it has one
+	  params['friendly_hostname'] = instance['Tags']['Name'].sub(/---.*$/, '')
+  end
+  node_config={}
+  node_config['parameters'] = params unless params.empty?
+  node_config['environment'] = instance['Tags']['environment'] if instance['Tags'].has_key?('environment')
+else
+  # Switch to new profile operations
 
-node_config={}
-node_config['classes'] = {'role::' + role => nil}
-node_config['parameters'] = params unless params.empty?
-node_config['environment'] = instance['Tags']['environment'] if instance['Tags'].has_key?('environment')
+  if not instance['Tags'].has_key?('puppet_role')
+	  abort "instance with id #{instance_id} found but has no puppet_role tag"
+  end
+
+  role = instance['Tags']['puppet_role']
+  params = instance['Tags'].clone
+  params.delete('Name')
+  if instance['Tags']['Name'] =~ /[a-zA-Z0-9\-_]+/
+	  utils.log.info("Found friendly name #{instance['Tags']['Name']}")
+	  # strip off the ---status suffix if it has one
+	  params['friendly_hostname'] = instance['Tags']['Name'].sub(/---.*$/, '')
+  end
+
+  node_config={}
+  node_config['classes'] = {'role::' + role => nil}
+  node_config['parameters'] = params unless params.empty?
+end
 
 puts YAML.dump(node_config)
 
